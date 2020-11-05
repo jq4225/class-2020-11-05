@@ -33,10 +33,24 @@ week_9 <- kenya %>%
 
 * Write the math for this model.
 
+$$regchg = \beta_0 + \beta_1treatment + \beta_2poverty_n + \beta_3treatment*poverty_n$$
+
 * Describe the population for which you are creating the model.
 
-* Fit the  model and interpret the coefficients. Focus on the coefficient of the interaction term.
+Potential Kenyan voters. 
 
+* Fit the  model and interpret the coefficients. Focus on the coefficient of the interaction term.
+Intercept: baseline value (w/o treatment, poverty) is 0.004
+Treatmentlocal: being treated should increase probability of registering by 2.1%
+Poverty_n: 
+treatment * poverty; High poverty communities have additional benefit from treatment
+
+```{r}
+fit_obj <- stan_glm(reg_chg ~ 1 + treatment + poverty_n + treatment:poverty_n,
+         data = week_9, refresh = 0)
+
+print(fit_obj, digits = 3)
+```
 
 
 
@@ -49,10 +63,26 @@ week_9 <- kenya %>%
 Write a sentence or two for each of these topics:
 
 * What would Wisdom suggest about the use of the `kenya` data to answer this question?
+We need to know if this situation is representative of what's covered in the kenya data. We don't really know if this polling is demographically similar in other dimensions, or if the timing makes a difference (e.g. being closer to election = more willingness to register).
 
 * Describe the ideal Preceptor Table.
+The ideal Preceptor table just shows what registration would be with and without the treatment. 
 
 * Graph the posterior probability distribution `reg_chg` if polling station 007/001 were to be assigned treatment in January.
+
+```{r}
+newobs <- week_9 %>%
+  filter(poll_station == "007/001") %>%
+  select(treatment, poverty_n)
+
+pp <- posterior_predict(fit_obj, newdata = newobs) %>%
+  as_tibble()
+
+
+pp %>%
+  ggplot(aes(x = `1`, y = afppter_stat(count/sum(count)))) +
+      geom_histogram(color = "white", bins = 50)
+```
 
 * Answer the President's question.
 
@@ -68,5 +98,21 @@ Write a sentence or two for each of these topics:
 
 Using the model which you created in Scene 1, create a graphic of the posterior probability distribution of the causal effect of `local` treatment in polling stations which have +2 sigma poverty rates. Note that there are two ways to do this. First, we can use a parameter approach. This is what we did in class last week. Second, we can use `posterior_epred()`, which is generally easier since it does the math for us. Use the `posterior_epred()` approach. 
 
+```{r}
+newobs2 <- tibble(treatment = c("control", "local"),
+                  poverty_n = 2)
+
+pe <- posterior_epred(fit_obj, newdata = newobs2) %>%
+  as_tibble() %>%
+  mutate(diff = `2` - `1`)
+
+pe %>%
+  ggplot(aes(x = diff)) + 
+    geom_histogram(color = "white", bins = 50) +
+    theme_classic()
+
+mean(pe$diff)
+
+```
 
 
