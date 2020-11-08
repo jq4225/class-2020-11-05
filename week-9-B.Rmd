@@ -80,7 +80,7 @@ pp <- posterior_predict(fit_obj, newdata = newobs) %>%
 
 
 pp %>%
-  ggplot(aes(x = `1`, y = afppter_stat(count/sum(count)))) +
+  ggplot(aes(x = `1`, y = after_stat(count/sum(count)))) +
       geom_histogram(color = "white", bins = 50)
 ```
 
